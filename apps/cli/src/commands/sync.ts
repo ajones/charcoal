@@ -1,6 +1,6 @@
 import yargs from 'yargs';
-import { syncAction } from '../../actions/sync/sync';
-import { graphite } from '../../lib/runner';
+import { syncAction } from '../actions/sync/sync';
+import { graphite } from '../lib/runner';
 
 const args = {
   pull: {
@@ -34,8 +34,8 @@ const args = {
 type argsT = yargs.Arguments<yargs.InferredOptionTypes<typeof args>>;
 
 export const command = 'sync';
-export const canonical = 'repo sync';
-export const aliases = ['s'];
+export const canonical = 'sync';
+export const aliases = ['sy'];
 export const description =
   'Pull the trunk branch from remote and delete any branches that have been merged. If trunk cannot be fast-forwarded to match remote, overwrites trunk with the remote version.';
 export const builder = args;

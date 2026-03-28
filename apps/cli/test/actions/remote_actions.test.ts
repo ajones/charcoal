@@ -59,7 +59,6 @@ for (const scene of [new CloneScene()]) {
           force: false,
           delete: false,
           showDeleteProgress: false,
-          restack: false,
         },
         scene.getContext()
       );
@@ -79,7 +78,6 @@ for (const scene of [new CloneScene()]) {
             force: false,
             delete: false,
             showDeleteProgress: false,
-            restack: false,
           },
           scene.getContext()
         )
@@ -96,7 +94,6 @@ for (const scene of [new CloneScene()]) {
           force: true,
           delete: false,
           showDeleteProgress: false,
-          restack: false,
         },
         scene.getContext()
       );

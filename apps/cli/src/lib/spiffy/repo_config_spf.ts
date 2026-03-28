@@ -41,7 +41,7 @@ export const repoConfigFactory = spiffy({
       },
 
       getIsGithubIntegrationEnabled: (): boolean =>
-        data.isGithubIntegrationEnabled ?? true,
+        data.isGithubIntegrationEnabled ?? false,
 
       graphiteInitialized: (): boolean => !!data.trunk,
 
