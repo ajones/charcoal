@@ -13,7 +13,6 @@ const GIT_COMMAND_ALLOWLIST = [
   'cherry-pick',
   'clean',
   'clone',
-  'diff',
   'difftool',
   'fetch',
   'format-patch',

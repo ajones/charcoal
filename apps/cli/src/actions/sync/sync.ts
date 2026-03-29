@@ -1,9 +1,7 @@
 import chalk from 'chalk';
 import { TContext } from '../../lib/context';
-import { SCOPE } from '../../lib/engine/scope_spec';
 import { KilledError } from '../../lib/errors';
-import { uncommittedTrackedChangesPrecondition } from '../../lib/preconditions';
-import { restackBranches } from '../restack';
+import { stashPop, stashSave } from '../../lib/git/stash';
 import { cleanBranches } from './clean_branches';
 import { syncPrInfo } from '../sync_pr_info';
 
@@ -13,18 +11,13 @@ export async function syncAction(
     force: boolean;
     delete: boolean;
     showDeleteProgress: boolean;
-    restack: boolean;
   },
   context: TContext
 ): Promise<void> {
-  uncommittedTrackedChangesPrecondition();
-
   if (opts.pull) {
     await pullTrunk(opts.force, context);
     context.splog.tip('You can skip pulling trunk with the `--no-pull` flag.');
   }
-
-  const branchesToRestack: string[] = [];
 
   await syncPrInfo(context.engine.allBranchNames, context);
 
@@ -32,7 +25,7 @@ export async function syncAction(
     context.splog.info(
       `🧹 Checking if any branches have been merged/closed and can be deleted...`
     );
-    const branchesWithNewParents = await cleanBranches(
+    await cleanBranches(
       { showDeleteProgress: opts.showDeleteProgress, force: opts.force },
       context
     );
@@ -44,55 +37,63 @@ export async function syncAction(
           : [
               'Try the `--force` flag to delete merged branches without prompting for each.',
             ]),
-        ...(opts.restack
-          ? []
-          : [
-              'Try the `--restack` flag to automatically restack the current stack as well as any stacks with deleted branches.',
-            ]),
       ].join('\n')
     );
-    if (!opts.restack) {
-      return;
+  }
+
+  restackAllBestEffort(context);
+}
+
+function restackAllBestEffort(context: TContext): void {
+  context.splog.info(`🔄 Restacking all tracked branches...`);
+  const stashed = stashSave();
+  if (stashed) {
+    context.splog.info('Stashed uncommitted changes.');
+  }
+  try {
+    restackAllBestEffortInner(context);
+  } finally {
+    if (stashed) {
+      stashPop();
+      context.splog.info('Restored stashed changes.');
     }
-
-    branchesWithNewParents
-      .flatMap((branchName) =>
-        context.engine.getRelativeStack(branchName, SCOPE.UPSTACK)
-      )
-      .forEach((branchName) => branchesToRestack.push(branchName));
   }
-  if (!opts.restack) {
+}
+
+function restackAllBestEffortInner(context: TContext): void {
+  const allTracked = context.engine.allBranchNames.filter(
+    (b) => context.engine.isBranchTracked(b) && !context.engine.isTrunk(b)
+  );
+
+  let restacked = 0;
+  let skipped = 0;
+
+  for (const branchName of allTracked) {
+    const result = context.engine.restackBranch(branchName);
+    if (result.result === 'REBASE_CONFLICT') {
+      context.engine.abortRebase();
+      context.splog.warn(
+        `Skipped ${chalk.yellow(branchName)} — conflict during restack.`
+      );
+      skipped++;
+    } else if (result.result === 'REBASE_DONE') {
+      context.splog.info(
+        `Restacked ${chalk.green(branchName)} on ${chalk.cyan(
+          context.engine.getParentPrecondition(branchName)
+        )}.`
+      );
+      restacked++;
+    }
+  }
+
+  if (skipped > 0) {
     context.splog.tip(
-      'Try the `--restack` flag to automatically restack the current stack.'
+      `${skipped} branch(es) skipped due to conflicts. Run \`gt restack\` on each to resolve.`
     );
-    return;
   }
-
-  const currentBranch = context.engine.currentBranch;
-
-  // The below conditional doesn't handle the trunk case because
-  // isBranchTracked returns false for trunk.  Also, in this case
-  // we don't want to append to our existing branchesToRestack
-  // because trunk's stack will include everything anyway.
-  if (currentBranch && context.engine.isTrunk(currentBranch)) {
-    restackBranches(
-      context.engine.getRelativeStack(currentBranch, SCOPE.STACK),
-      context
-    );
-    return;
+  if (restacked === 0 && skipped === 0) {
+    context.splog.info('All branches are up to date.');
   }
-
-  if (
-    currentBranch &&
-    context.engine.isBranchTracked(currentBranch) &&
-    !branchesToRestack.includes(currentBranch)
-  ) {
-    context.engine
-      .getRelativeStack(currentBranch, SCOPE.STACK)
-      .forEach((branchName) => branchesToRestack.push(branchName));
-  }
-
-  restackBranches(branchesToRestack, context);
 }
 
 export async function pullTrunk(

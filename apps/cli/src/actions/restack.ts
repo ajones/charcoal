@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { TContext } from '../lib/context';
 import { RebaseConflictError } from '../lib/errors';
+import { stashPop, stashSave } from '../lib/git/stash';
 import { assertUnreachable } from '../lib/utils/assert_unreachable';
 import { persistContinuation } from './persist_continuation';
 import { printConflictStatus } from './print_conflict_status';
@@ -9,6 +10,21 @@ export function restackBranches(
   branchNames: string[],
   context: TContext
 ): void {
+  const stashed = stashSave();
+  if (stashed) {
+    context.splog.info('Stashed uncommitted changes.');
+  }
+  try {
+    restackBranchesInner(branchNames, context);
+  } finally {
+    if (stashed) {
+      stashPop();
+      context.splog.info('Restored stashed changes.');
+    }
+  }
+}
+
+function restackBranchesInner(branchNames: string[], context: TContext): void {
   context.splog.debug(
     branchNames.reduce((acc, curr) => `${acc}\n${curr}`, 'RESTACKING:')
   );

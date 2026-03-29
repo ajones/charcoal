@@ -26,6 +26,7 @@ process.on('uncaughtException', (err) => {
 void yargs(getYargsInput())
   .commandDir('commands')
   .help()
+  .alias('help', 'h')
   .usage(
     'Charcoal is a command line tool that makes working with stacked changes fast & intuitive.\n\nhttps://docs.graphite.dev/guides/graphite-cli'
   )
