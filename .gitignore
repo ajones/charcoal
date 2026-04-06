@@ -9,6 +9,7 @@ turbo-build.log
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
+.develop-install/
 dist/
 .eslintcache
 .graphite_repo_config
