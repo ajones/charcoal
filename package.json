@@ -8,6 +8,9 @@
     ]
   },
   "packageManager": "yarn@3.3.1",
+  "scripts": {
+    "dev": "./develop.sh"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
