@@ -1,6 +1,6 @@
 import { TContext } from '../lib/context';
 import { SCOPE } from '../lib/engine/scope_spec';
-import { ExitFailedError } from '../lib/errors';
+import { ExitFailedError, KilledError } from '../lib/errors';
 import { newBranchName } from '../lib/utils/branch_name';
 import { restackBranches } from './restack';
 
@@ -23,26 +23,26 @@ export async function createBranchAction(
 
   context.engine.checkoutNewBranch(branchName);
 
-  if (opts.all) {
-    context.engine.addAll();
-  }
+  try {
+    if (opts.all) {
+      context.engine.addAll();
+    }
 
-  if (context.engine.detectStagedChanges()) {
-    try {
+    if (context.engine.detectStagedChanges()) {
       context.engine.commit({
         message: opts.message,
         patch: !opts.all && opts.patch,
       });
-    } catch (e) {
-      try {
-        context.engine.deleteBranch(branchName);
-      } catch {
-        // pass
-      }
-      throw e;
+    } else {
+      await confirmCreateBranchWithoutCommit(context);
     }
-  } else {
-    context.splog.info(`No staged changes; created a branch with no commit.`);
+  } catch (e) {
+    try {
+      context.engine.deleteBranch(branchName);
+    } catch {
+      // pass
+    }
+    throw e;
   }
 
   // The reason we get the list of siblings here instead of having all
@@ -82,4 +82,25 @@ export async function createBranchAction(
     ),
     context
   );
+}
+
+async function confirmCreateBranchWithoutCommit(
+  context: TContext
+): Promise<void> {
+  if (!context.interactive) {
+    throw new ExitFailedError(
+      `No staged changes; aborting non-interactive branch creation.`
+    );
+  }
+
+  const response = await context.prompts({
+    type: 'confirm',
+    name: 'value',
+    message: `No staged changes detected. Create this branch with no commit?`,
+    initial: false,
+  });
+
+  if (!response.value) {
+    throw new KilledError();
+  }
 }
