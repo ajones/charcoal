@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process';
 import { runGitCommand } from './runner';
 
 export function detectStagedChanges(): boolean {
@@ -66,4 +67,18 @@ export function getDiff(left: string, right: string | undefined): string {
     onError: 'throw',
     resource: 'getDiff',
   });
+}
+
+// Pass arbitrary arguments straight through to `git diff`, inheriting stdio so
+// the user gets git's native pager, coloring, and exit code.
+export function forwardGitDiff(args: string[]): void {
+  const result = spawnSync('git', ['diff', ...args], {
+    stdio: 'inherit',
+    windowsHide: true,
+  });
+  if (result.error) {
+    throw result.error;
+  }
+  // eslint-disable-next-line no-restricted-syntax
+  process.exitCode = result.status ?? 0;
 }

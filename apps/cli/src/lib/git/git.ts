@@ -18,6 +18,7 @@ import {
   showDiff,
   isDiffEmpty,
   getDiff,
+  forwardGitDiff,
 } from './diff';
 import {
   fetchBranch,
@@ -71,6 +72,7 @@ function composeGitInternal() {
     deleteBranch,
     switchBranch,
     getDiff,
+    forwardGitDiff,
     forceCheckoutNewBranch,
     forceCreateBranch,
     getCommitRange,

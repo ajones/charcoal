@@ -59,6 +59,7 @@ export type TEngine = {
   showCommits: (branchName: string, patch: boolean) => string;
   showDiff: (branchName: string) => string;
   getDiff: (left: string, right: string | undefined) => string;
+  forwardDiff: (args: string[]) => void;
   getStackDiff: (branchName: string) => string;
   getParentOrPrev: (branchName: string) => string;
   getChangedFiles: (branchName: string) => TChangedFile[];
@@ -549,6 +550,7 @@ export function composeEngine({
       );
     },
     getDiff: git.getDiff,
+    forwardDiff: git.forwardGitDiff,
     getStackDiff: (branchName: string) => {
       const meta = assertBranchIsValidOrTrunkAndGetMeta(branchName);
       return git.getDiff(
