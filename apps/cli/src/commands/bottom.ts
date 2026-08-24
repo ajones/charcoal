@@ -7,7 +7,7 @@ type argsT = yargs.Arguments<yargs.InferredOptionTypes<typeof args>>;
 
 export const command = 'bottom';
 export const canonical = 'bottom';
-export const aliases = ['bot'];
+export const aliases = ['b', 'bot'];
 export const description =
   'Switch to the first branch from trunk in the current stack.';
 export const builder = args;

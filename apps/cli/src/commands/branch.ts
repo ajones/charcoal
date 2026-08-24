@@ -4,7 +4,7 @@ export const command = 'branch <command>';
 export const desc =
   'Commands that operate on your current branch. Run `gt branch --help` to learn more.';
 
-export const aliases = ['b'];
+export const aliases = [];
 export const builder = function (yargs: Argv): Argv {
   return yargs
     .commandDir('branch-commands', {

@@ -1,19 +1,24 @@
 import { handleDeprecatedCommandNames } from './deprecated_commands';
 import { passthrough } from './passthrough';
 
+function branchShortcutPrefix(firstChar: string): string {
+  // `gt b` is bottom, but two-letter shortcuts like `bd` still mean branch down.
+  return firstChar === 'b' ? 'branch' : firstChar;
+}
+
 function splitShortcuts(command: string): string[] {
   if (
     command.length === 2 &&
     !['ds', 'us', 'co'].includes(command) // block list two letter noun aliases
   ) {
-    return [command[0], command[1]];
+    return [branchShortcutPrefix(command[0]), command[1]];
   }
 
   if (
     command.length === 3 &&
     ['bco', 'bdl', 'btr', 'but', 'brn', 'bsq', 'bsp', 'dpr'].includes(command) // special case three-letter shortcuts
   ) {
-    return [command[0], command.slice(1)];
+    return ['branch', command.slice(1)];
   }
 
   if (
